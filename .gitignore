@@ -1,0 +1,15 @@
+# IntelliJ
+.idea/
+
+# Python
+~*/
+__pycache__/
+*.pyc
+
+# Virtual Environment
+venv/
+
+# Production
+logs/
+settings.py
+assets/cert.pem
