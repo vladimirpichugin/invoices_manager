@@ -8,11 +8,7 @@ from email.mime.multipart import MIMEMultipart
 from email.header import Header
 from email import utils as email_utils
 
-from .helpers import init_logger
-
 from settings import Settings
-
-logger = init_logger()
 
 
 class Mail:
@@ -56,4 +52,3 @@ class Mail:
         multipart.attach(html)
 
         return multipart
-
