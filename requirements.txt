@@ -1,2 +1,2 @@
-pymongo
-schedule
+pymongo==3.12.1
+schedule==1.1.0

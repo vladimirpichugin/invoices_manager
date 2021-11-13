@@ -1,0 +1,29 @@
+Электронный счёт оплачен
+
+№ счёта: %id%
+
+Наименование:
+%name%
+
+Дата создания: %date_created%
+Дата оплаты: %date_paid%
+
+Оплачено через: %gateway%
+
+Получатель: %payee%
+
+Плательщик: %payer%
+
+Итого: %currency_l%%total%%currency_r%
+<!-- commission-start -->Комиссия: %currency_l%%commission%%currency_r%<!-- commission-end -->
+<!-- commission-start -->Скидка: %currency_l%%discount%%currency_r%<!-- discount-end -->
+<!-- credit-start -->Кредит: %currency_l%%credit%%currency_r%<!-- credit-end -->
+К оплате: %currency_l%%paid%%currency_r%
+
+Ссылка на счёт:
+https://pichugin.life/invoice?id=%_id%
+
+%first_name%, вы получили это сообщение, потому что указали электро-почту %email% при регистрации на сайте pichugin.life.
+
+Если вы больше не хотите получать письма, вы можете изменить настройки рассылки или отписаться в профиле: https://pichugin.life/login?profile&act=settings&s=invoices_reminder
+Не отвечайте на это письмо.

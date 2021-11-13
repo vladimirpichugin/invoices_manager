@@ -8,64 +8,52 @@ from email.mime.multipart import MIMEMultipart
 from email.header import Header
 from email import utils as email_utils
 
+from .helpers import init_logger
+
 from settings import Settings
 
+logger = init_logger()
 
-class MailServer:
+
+class Mail:
     @staticmethod
-    def get_mail_server():
-        context = ssl.create_default_context(
+    def get_mail_client() -> smtplib.SMTP_SSL:
+        ssl_context = ssl.create_default_context(
             purpose=ssl.Purpose.CLIENT_AUTH,
-            cafile='cert.pem'
+            cafile=Settings.SMTP_SSL_CAFILE
         )
 
-        mail_srv = smtplib.SMTP_SSL(
-            host=Settings.SMTP_HOST,
-            port=Settings.SMTP_PORT,
-            timeout=Settings.SMTP_TIMEOUT,
-            context=context
+        server = smtplib.SMTP_SSL(
+            host=Settings.SMTP_SERVER_HOST,
+            port=Settings.SMTP_SERVER_PORT,
+            timeout=Settings.SMTP_CONN_TIMEOUT,
+            context=ssl_context
         )
 
-        mail_srv.login(
-            user=Settings.SMTP_USERNAME,
-            password=Settings.SMTP_PASSWORD
-        )
-
-        return mail_srv
+        return server
 
     @staticmethod
-    def get_payload(to_name, to_email, subject, placeholders):
-        payload = MIMEMultipart('alternative')
+    def create_multipart(from_addr: str, from_name: str, to_addr: str, to_name: str, subject: str, html: str, plain: str = '', headers: dict = {}):
+        multipart = MIMEMultipart('alternative')
 
-        payload.set_charset('utf8')
+        multipart.set_charset('utf8')
+        multipart['Date'] = email_utils.formatdate(time.time())
+        multipart['Subject'] = Header(subject, "utf-8")
+        multipart['To'] = email_utils.formataddr((str(Header(to_name, 'utf-8')), to_addr))
+        multipart['From'] = email_utils.formataddr((str(Header(from_name, 'utf-8')), from_addr))
 
-        payload['X-Pichugin-Projects-Service'] = 'INVOICE_REMINDER'
-        payload['Date'] = email_utils.formatdate(time.time())
-        payload['Subject'] = Header(subject, "utf-8")
-        payload['To'] = email_utils.formataddr((str(Header(to_name, 'utf-8')), to_email))
-        payload['From'] = email_utils.formataddr((str(Header(Settings.FROM_NAME, 'utf-8')), Settings.FROM_EMAIL))
-        #payload['X-Priority'] = '2 (High)'
-        #payload['Importance'] = 'High'
-        #payload['X-MSMail-Priority'] = 'High'
+        for header_name, header in headers.items():
+            multipart[header_name] = header
 
-        templates = {
-            'plain': open('mail_template.txt', 'r', encoding='utf8').read().strip(),
-            'html': open('mail_template.html', 'r', encoding='utf8').read().strip()
-        }
+        # Fix SpamAssassin score MIXED_ES (Too many es are not es).
+        plain = plain.replace('ё', 'e').replace('е', 'e')
+        html = html.replace('ё', 'e').replace('е', 'e')
 
-        for template_name, template in templates.items():
-            for placeholder, value in placeholders.items():
-                template = template.replace(f'%{placeholder}%', str(value))
-            templates[template_name] = template
+        plain = MIMEText(plain, 'plain', 'UTF-8')
+        html = MIMEText(html, 'html', 'UTF-8')
 
-        plain = MIMEText(templates['plain'].encode('utf-8'), 'plain', 'UTF-8')
-        html = MIMEText(templates['html'].encode('utf-8'), 'html', 'UTF-8')
+        multipart.attach(plain)
+        multipart.attach(html)
 
-        payload.attach(plain)
-        payload.attach(html)
+        return multipart
 
-        return payload
-
-    @staticmethod
-    def get_placeholders():
-        return ['id', '_id', 'name', 'payee', 'payer', 'first_name', 'date_created', 'date_paid', 'gateway', 'total', 'discount', 'commission', 'credit', 'sum', 'currency_left', 'currency_right', 'email', 'sub_subject', 'message_id', 'year']

@@ -22,13 +22,13 @@ def init_logger():
     return logger
 
 
-def get_logger_formatter(format=u'%(pathname)s:%(lineno)d\n[%(asctime)s] %(levelname)-5s %(threadName)-15s: %(message)s'):
+def get_logger_formatter(f=u'%(pathname)s:%(lineno)d\n[%(asctime)s] %(levelname)-5s %(threadName)-15s: %(message)s') -> logging.Formatter:
     return logging.Formatter(
-        fmt=format,
+        fmt=f,
         datefmt='%d.%m.%y %H:%M:%S')
 
 
-def get_logger_file_handler():
+def get_logger_file_handler() -> logging.FileHandler:
     pathlib.Path('logs').mkdir(exist_ok=True)
     file_handler = logging.FileHandler(os.path.join('logs', 'log.txt'), encoding='utf-8')
 
@@ -37,9 +37,26 @@ def get_logger_file_handler():
     return file_handler
 
 
-def get_logger_stream_handler():
+def get_logger_stream_handler() -> logging.StreamHandler:
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(get_logger_formatter(u'[%(asctime)s] %(levelname)-5s %(threadName)-15s: %(message)s'))
 
     return stream_handler
 
+
+def get_currency() -> dict:
+    return {'RUB': '₽', 'EUR': '€', 'USD': '$'}
+
+
+def get_months() -> dict:
+    return {
+      'January': 'января', 'February': 'февраля', 'March': 'марта',
+      'April': 'апреля', 'May': 'мая', 'June': 'июня', 'July': 'июля',
+      'August': 'августа', 'September': 'сентября', 'October': 'октября',
+      'November': 'ноября', 'December': 'декабря'
+    }
+
+
+def load_assets_file(file) -> str:
+    with open(os.path.join(os.getcwd(), 'assets', file), 'r', encoding='utf8') as f:
+        return f.read().strip()

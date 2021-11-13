@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Author: Vladimir Pichugin <vladimir@pichug.in>
 import pymongo
-from .data import SDict, Invoice, Client
+from .data import SDict, Invoice, Client, MessageDeliveryReport
 from .helpers import init_logger
 
 from settings import Settings
@@ -15,6 +15,7 @@ class Storage:
         self.db = self.mongo_client.get_database(Settings.MONGO_DATABASE)
         self.clients = self.db.get_collection(Settings.MONGO_C_CLIENTS)
         self.invoices = self.db.get_collection(Settings.MONGO_C_INVOICES)
+        self.messages = self.db.get_collection(Settings.MONGO_C_MESSAGES)
 
     def get_client(self, client_id: str):
         data = self.get_data(self.clients, client_id)
@@ -36,18 +37,29 @@ class Storage:
 
         return invoice
 
-    def save(self, data: [Client, Invoice]) -> bool:
-        if not data.changed:
-            logger.debug(f'Data ({type(data)}) <{data.id}> already saved, data not changed.')
+    def save_invoice(self, invoice: Invoice) -> bool:
+        if not invoice.changed:
+            logger.debug(f'Invoice <{invoice.id}> already saved, data not changed.')
             return True
 
-        save = self.save_data(self.invoices, data.id, data)
+        save = self.save_data(self.invoices, invoice.id, invoice)
 
         if save:
-            logger.debug(f'Data ({type(data)}) <{data.id}> saved, result: {save}')
+            logger.debug(f'Invoice <{invoice.id}> saved, result: {save}')
             return True
 
-        logger.error(f'Data ({type(data)}) <{data.id}> not saved, result: {save}')
+        logger.error(f'Invoice <{invoice.id}> not saved, result: {save}')
+
+        return False
+
+    def save_report(self, report: MessageDeliveryReport):
+        save = self.save_data(self.messages, report.id, report)
+
+        if save:
+            logger.debug(f'Report <{report.id}> saved, result: {save}')
+            return True
+
+        logger.error(f'Report <{report.id}> not saved, result: {save}')
 
         return False
 
@@ -62,8 +74,6 @@ class Storage:
 
     @staticmethod
     def save_data(c: pymongo.collection.Collection, value, data: SDict, name="_id"):
-        return None
-
         if c.find_one({name: value}):
             return c.update_one({name: value}, {"$set": data})
         else:

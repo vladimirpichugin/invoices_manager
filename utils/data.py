@@ -56,3 +56,15 @@ class Client(SDict):
     @staticmethod
     def create(data):
         return Client(data)
+
+
+class MessageDeliveryReport(SDict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.id = self.getraw('_id')
+
+    @staticmethod
+    def create(data):
+        return MessageDeliveryReport(data)
+
