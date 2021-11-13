@@ -8,7 +8,7 @@ from settings import Settings
 
 
 def init_logger():
-    logger = logging.Logger('invoices_reminder', level=logging.DEBUG if Settings.DEBUG else logging.INFO)
+    logger = logging.Logger('invoices_manager', level=logging.DEBUG if Settings.DEBUG else logging.INFO)
 
     file_handler = get_logger_file_handler()
     file_handler.setLevel(logging.DEBUG)
