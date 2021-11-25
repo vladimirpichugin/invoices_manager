@@ -33,9 +33,18 @@ class Storage:
         if not data:
             return None
 
-        invoice = Invoice.create(data)
+        invoice = Invoice(data)
 
         return invoice
+
+    def get_invoices(self):
+        data = self.invoices.find({})
+
+        invoices = []
+        for invoice in data:
+            invoices.append(Invoice(invoice))
+
+        return invoices
 
     def save_invoice(self, invoice: Invoice) -> bool:
         if not invoice.changed:
