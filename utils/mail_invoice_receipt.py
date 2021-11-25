@@ -5,21 +5,22 @@ import datetime
 from itertools import zip_longest
 
 from .helpers import get_currency, get_months, load_assets_file, init_logger
+from .json import Json
 from .mail import Mail
 from .data import MessageDeliveryReport
 
 from settings import Settings
 
 logger = init_logger()
-
-plain = load_assets_file('invoice_receipt_ru.txt')
-html = load_assets_file('invoice_receipt_ru.html')  # (<!--(?P<open_tag>.+?)-->)(?P<payload>.+?)(<!--(?P<close_tag>.+?)-->)
+L10n = Json('assets/L10n_ru.json')
 
 
 class MailInvoiceReceipt:
     @staticmethod
     def paid(invoice, payee, payer):
-        global plain, html
+        # (<!--(?P<open_tag>.+?)-->)(?P<payload>.+?)(<!--(?P<close_tag>.+?)-->)
+        plain = load_assets_file('invoice_receipt_ru.txt')
+        html = load_assets_file('invoice_receipt_ru.html')
 
         from_addr = Settings.SMTP_RECEIPT_USER
         from_name = Settings.SMTP_RECEIPT_NAME
@@ -33,15 +34,17 @@ class MailInvoiceReceipt:
 
         payee_name = f"{payee.getraw('first_name', payee_id) + ' ' + payee.getraw('last_name', '')}".strip()
 
-        to_addr = payer.getraw('email')
+        # to_addr = payer.getraw('email')
+        to_addr = 'vladimir@pichug.in'  # todo: remove debug
 
         to_name = payer_name = f"{payer.getraw('first_name', payer_id) + ' ' + payer.getraw('last_name', '')}".strip()
         first_name = payer.getraw('first_name', payer_id)
 
-        subject = 'Счёт № %id% оплачен: %name%'
-        sub_subject = 'Спешим сообщить о получении платежа.'
+        subject = L10n.get('invoice.receipt.mail.subject')
+        preview = L10n.get('invoice.receipt.mail.preview')
 
         subject = subject.replace('%id%', invoice_id).replace('%name%', invoice_name)
+        preview = preview.replace('%id%', invoice_id).replace('%name%', invoice_name)
 
         message_id = uuid.uuid4()
 
@@ -65,7 +68,7 @@ class MailInvoiceReceipt:
         placeholders['currency_r'] = f' {currency_symbol}' if invoice_currency == 'RUB' else ''
 
         placeholders['message_id'] = str(message_id)
-        placeholders['sub_subject'] = sub_subject
+        placeholders['preview'] = preview
         placeholders['year'] = datetime.datetime.now().year
 
         for key, value in dict(invoice).items():
@@ -108,7 +111,7 @@ class MailInvoiceReceipt:
                 if 'gateway' in transaction:
                     placeholders['gateway'] = Settings.GATEWAYS.get(transaction['gateway'], transaction['gateway'])
 
-        for _ in ['total', 'discount', 'credit', 'commission', 'paid']:
+        for _ in ['total', 'discount', 'commission', 'paid']:
             if placeholders[_]:
                 placeholders[_] = f'{float(placeholders[_]):.2f}'
             else:
@@ -126,7 +129,7 @@ class MailInvoiceReceipt:
 
         headers = {
             'Feedback-ID': header_feedback_id,
-            'X-Pichugin-Notify': Settings.SMTP_RECEIPT_HEADER_SERVICE
+            'X-Pichugin-Service': Settings.SMTP_RECEIPT_HEADER_SERVICE
         }
 
         multipart = Mail.create_multipart(from_addr, from_name, to_addr, to_name, subject, html, plain, headers)
@@ -135,7 +138,7 @@ class MailInvoiceReceipt:
             '_id': message_id,
             '_v': 1,
             'type': 'email',
-            'notify': Settings.SMTP_ALERT_HEADER_SERVICE,
+            'notify': Settings.SMTP_RECEIPT_HEADER_SERVICE,
             'message': {
                 'payer_id': payer_id,
                 'invoice_id': invoice_id,

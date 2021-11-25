@@ -6,4 +6,4 @@ from .data import *
 from .json import Json
 from .mail import Mail
 from .mail_invoice_receipt import MailInvoiceReceipt
-from .mail_invoice_alert import MailInvoiceAlert
+from .mail_invoice_notify import MailInvoiceNotify

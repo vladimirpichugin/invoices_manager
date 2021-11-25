@@ -13,8 +13,9 @@ if __name__ == "__main__":
     console_thread.daemon = True
     console_thread.start()
 
-    schedule.every(10).minutes.do(main.run_threaded, name='Alert', func=main.email_alert).run()
-    schedule.every().day.at('10:00').do(main.run_threaded, name='Receipt', func=main.email_receipt)
+    #schedule.every(1).hour.do(main.run_threaded, name='AutoInvoices', func=main.auto_invoice).run()
+    #schedule.every(10).minutes.do(main.run_threaded, name='Notify', func=main.invoice_notify).run()
+    schedule.every().day.at('10:00').do(main.run_threaded, name='Receipt', func=main.invoice_receipt)
 
     # Поддерживать работу основного потока, пока поток демона жив.
     while True:
@@ -23,7 +24,7 @@ if __name__ == "__main__":
                 main.logger.error("ConsoleThread is not alive, shutting down..")
                 break
 
-            # schedule.run_pending()
+            schedule.run_pending()
 
             time.sleep(1)
         except KeyboardInterrupt:

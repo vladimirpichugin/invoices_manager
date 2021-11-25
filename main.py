@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Author: Vladimir Pichugin <vladimir@pichug.in>
+import datetime
 import smtplib
 import threading
 import schedule
@@ -26,40 +27,61 @@ def run_threaded(name, func):
 	job_thread.start()
 
 
-def email_alert():
-	#logger.debug('email_reminder. every 10 minutes')
-	invoice = storage.get_invoice('4d0c6355-dd6f-4a38-814c-8050280eca25')
-	#logger.debug(invoice)
+def auto_invoice():
+	pass
 
 
-def email_receipt():
-	invoice = storage.get_invoice('4d0c6355-dd6f-4a38-814c-8050280eca25')
-	payee = storage.get_client(invoice.get('payee').get('id'))
-	payer = storage.get_client(invoice.get('payer').get('id'))
+def invoice_notify():
+	pass
 
-	mail_delivery_report, from_addr, to_addr, msg = MailInvoiceReceipt.paid(
-		invoice=invoice,
-		payee=payee,
-		payer=payer
-	)
 
-	try:
-		mail_client = Mail.get_mail_client()
-		mail_client.login(user=Settings.SMTP_RECEIPT_USER, password=Settings.SMTP_RECEIPT_PASS)
-	except Exception as e:
-		raise NotificationDeliveryProblem('Can\'t init SMTP client.') from e
+def invoice_receipt():
+	invoices = storage.get_invoices()
 
-	try:
-		send_message = mail_client.sendmail(from_addr, to_addr, msg)
-		logger.debug(f'Send MAIL from <{from_addr}> to <{to_addr}>, response: {send_message}')
-	except smtplib.SMTPRecipientsRefused as e:
-		raise NotificationDeliveryProblem('Can\'t send mail.') from e
-	finally:
-		mail_client.quit()
+	for invoice in invoices:
+		if invoice.get('_informed_receipt'):
+			continue
 
-	logger.debug(f'MessageDeliveryReport: {mail_delivery_report}')
-	save = storage.save_report(mail_delivery_report)
-	logger.debug(f'Save MessageDeliveryReport: {save}')
+		paid_timestamp = int(invoice.get('paid_timestamp') or 0)
+
+		if not paid_timestamp:
+			continue
+
+		paid_dt = datetime.datetime.fromtimestamp(paid_timestamp)
+
+		time_diff = datetime.datetime.today() - paid_dt
+
+		if time_diff.total_seconds() < 28800:
+			payee = storage.get_client(invoice.get('payee').get('id'))
+			payer = storage.get_client(invoice.get('payer').get('id'))
+
+			mail_delivery_report, from_addr, to_addr, msg = MailInvoiceReceipt.paid(
+				invoice=invoice,
+				payee=payee,
+				payer=payer
+			)
+
+			try:
+				mail_client = Mail.get_mail_client()
+				mail_client.login(user=Settings.SMTP_RECEIPT_USER, password=Settings.SMTP_RECEIPT_PASS)
+			except Exception as e:
+				raise NotificationDeliveryProblem('Can\'t init SMTP client.') from e
+
+			try:
+				send_message = mail_client.sendmail(from_addr, to_addr, msg)
+				logger.debug(f'Send MAIL from <{from_addr}> to <{to_addr}>, response: {send_message}')
+			except smtplib.SMTPRecipientsRefused as e:
+				raise NotificationDeliveryProblem('Can\'t send mail.') from e
+			finally:
+				mail_client.quit()
+
+			logger.debug(f'MessageDeliveryReport: {mail_delivery_report}')
+			save = storage.save_report(mail_delivery_report)
+			logger.debug(f'Save MessageDeliveryReport: {save}')
+
+			invoice['_informed_receipt'] = True
+
+			storage.save_invoice(invoice)
 
 
 def console():
@@ -88,11 +110,11 @@ def console():
 				else:
 					logger.info('No tasks.')
 			elif cmd == "test":
-				logger.debug('Test email_receipt')
-				email_receipt()
+				logger.debug('Test invoice_receipt')
+				invoice_receipt()
 			elif cmd == "test2":
-				logger.debug('Test email_alert')
-				email_alert()
+				logger.debug('Test invoice_notify')
+				invoice_notify()
 			elif cmd == "stop":
 				break
 			else:
