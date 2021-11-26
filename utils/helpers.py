@@ -60,3 +60,21 @@ def get_months() -> dict:
 def load_assets_file(file) -> str:
     with open(os.path.join(os.getcwd(), 'assets', file), 'r', encoding='utf8') as f:
         return f.read().strip()
+
+
+def parse_placeholders(placeholders):
+    for key, value in placeholders.items():
+        if value is None:
+            placeholders[key] = 'null'
+        elif type(value) != str:
+            placeholders[key] = str(value)
+
+    return placeholders
+
+
+def replace_placeholders(placeholders, html, plain):
+    for placeholder, placeholder_value in placeholders.items():
+        html = html.replace(f'%{placeholder}%', str(placeholder_value))
+        plain = plain.replace(f'%{placeholder}%', str(placeholder_value))
+
+    return html, plain
