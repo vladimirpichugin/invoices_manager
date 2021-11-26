@@ -4,25 +4,30 @@ import uuid
 import datetime
 from itertools import zip_longest
 
-from .helpers import get_currency, get_months, load_assets_file, init_logger
+from .helpers import get_currency, get_months, load_assets_file, init_logger, parse_placeholders, replace_placeholders
+from .json import Json
 from .mail import Mail
 from .data import MessageDeliveryReport
 
 from settings import Settings
 
 logger = init_logger()
-
-plain = load_assets_file('invoice_alert_ru.txt')
-html = load_assets_file('invoice_alert_ru.html')  # (<!--(?P<open_tag>.+?)-->)(?P<payload>.+?)(<!--(?P<close_tag>.+?)-->)
+L10n = Json('assets/L10n_ru.json')
 
 
-class MailInvoiceAlert:
+class MailInvoiceNotify:
     @staticmethod
-    def created(invoice, payee, payer):
-        global plain, html
+    def make(invoice, payee, payer, from_addr, from_name):
+        # (<!--(?P<open_tag>.+?)-->)(?P<payload>.+?)(<!--(?P<close_tag>.+?)-->)
+        plain = load_assets_file('invoice_notify_ru.txt')
+        html = load_assets_file('invoice_notify_ru.html')
+        subject = L10n.get('invoice.notify.mail.subject')
+        preview = L10n.get('invoice.notify.mail.preview')
+        text = L10n.get('invoice.notify.mail.text')
+        placeholders = dict(zip_longest(Settings.PLACEHOLDERS.get('INVOICE_MAIL_TEMPLATE'), []))
+        placeholders['text'] = text
 
-        from_addr = Settings.SMTP_ALERT_USER
-        from_name = Settings.SMTP_ALERT_NAME
+        header_service = Settings.SMTP_ALERT_HEADER_SERVICE
 
         invoice_id = invoice.get('id')
         invoice_name = invoice.get('name')
@@ -34,25 +39,18 @@ class MailInvoiceAlert:
         payee_name = f"{payee.getraw('first_name', payee_id) + ' ' + payee.getraw('last_name', '')}".strip()
 
         # to_addr = payer.getraw('email')
-        to_addr = 'vladimir@pichug.in'  # todo: remove this debug string
+        to_addr = 'vladimir@pichug.in'  # todo: remove debug
 
         to_name = payer_name = f"{payer.getraw('first_name', payer_id) + ' ' + payer.getraw('last_name', '')}".strip()
         first_name = payer.getraw('first_name', payer_id)
-
-        subject = 'Счёт № %id% не оплачен: %name%'
-        sub_subject = 'Спешим сообщить о получении платежа.'
-
-        subject = subject.replace('%id%', invoice_id).replace('%name%', invoice_name)
 
         message_id = uuid.uuid4()
 
         header_feedback_id = Settings.SMTP_HEADER_FEEDBACK_ID.format(
             message_id=message_id.hex,
             invoice_id=invoice_id,
-            service=Settings.SMTP_RECEIPT_HEADER_SERVICE
+            service=header_service
         )
-
-        placeholders = dict(zip_longest(Settings.PLACEHOLDERS.get('INVOICE_MAIL_TEMPLATE'), []))
 
         currency_symbol = get_currency().get(invoice_currency)
 
@@ -66,14 +64,14 @@ class MailInvoiceAlert:
         placeholders['currency_r'] = f' {currency_symbol}' if invoice_currency == 'RUB' else ''
 
         placeholders['message_id'] = str(message_id)
-        placeholders['sub_subject'] = sub_subject
+        placeholders['preview'] = preview.replace('%id%', invoice_id).replace('%name%', invoice_name)
         placeholders['year'] = datetime.datetime.now().year
 
         for key, value in dict(invoice).items():
             if key in Settings.PLACEHOLDERS.get('INVOICE_OBJECT'):
                 placeholders[key] = str(value)
 
-        for placeholder, keys in {'date_created': ['created'], 'date_paid': ['paid_timestamp', 'created']}.items():
+        for placeholder, keys in {'date_created': ['created'], 'date_paid': ['paid_timestamp', 'created'], 'date_due': ['due', 'created']}.items():
             for key in keys:
                 if invoice.get(key) and not placeholders[placeholder]:
                     dt = datetime.datetime.fromtimestamp(invoice[key])
@@ -84,59 +82,36 @@ class MailInvoiceAlert:
 
                     placeholders[placeholder] = date
 
-        if type(invoice.get('gateways')) == list:
-            if len(invoice['gateways']) > 0:
-                placeholders['gateway'] = Settings.GATEWAYS.get(invoice['gateways'][0], invoice['gateways'][0])
-
         placeholders['total'] = 0
-        placeholders['discount'] = 0
         if type(invoice.get('items')) == list:
             for item in invoice['items']:
                 if type(item) != dict:
                     continue
 
                 placeholders['total'] += item.get('price', 0)
-                placeholders['discount'] += item.get('discount', 0)
 
-        placeholders['paid'] = 0
-        if type(invoice.get('transactions')) == list:
-            for transaction in invoice['transactions']:
-                if type(transaction) != dict:
-                    continue
-
-                placeholders['paid'] += transaction.get('sum', 0)
-
-                if 'gateway' in transaction:
-                    placeholders['gateway'] = Settings.GATEWAYS.get(transaction['gateway'], transaction['gateway'])
-
-        for _ in ['total', 'discount', 'credit', 'commission', 'paid']:
+        for _ in ['total']:
             if placeholders[_]:
-                placeholders[_] = f'{float(placeholders[_]):.2f}'
+                placeholders[_] = f'{float(placeholders[_]):,.2f}'
             else:
                 placeholders[_] = 0.0
 
-        for key, value in placeholders.items():
-            if value is None:
-                placeholders[key] = 'null'
-            elif type(value) != str:
-                placeholders[key] = str(value)
+        placeholders = parse_placeholders(placeholders)
+        html, plain = replace_placeholders(placeholders, html, plain)
 
-        for placeholder, placeholder_value in placeholders.items():
-            html = html.replace(f'%{placeholder}%', str(placeholder_value))
-            plain = plain.replace(f'%{placeholder}%', str(placeholder_value))
+        subject = subject.replace('%id%', invoice_id).replace('%name%', invoice_name)
 
         headers = {
             'Feedback-ID': header_feedback_id,
-            'X-Pichugin-Notify': Settings.SMTP_RECEIPT_HEADER_SERVICE
+            'X-Pichugin-Service': header_service
         }
 
         multipart = Mail.create_multipart(from_addr, from_name, to_addr, to_name, subject, html, plain, headers)
 
         message = MessageDeliveryReport.create({
             '_id': message_id,
-            '_v': 1,
             'type': 'email',
-            'notify': Settings.SMTP_RECEIPT_HEADER_SERVICE,
+            'notify': header_service,
             'message': {
                 'payer_id': payer_id,
                 'invoice_id': invoice_id,
@@ -147,7 +122,8 @@ class MailInvoiceAlert:
                 'subject': subject,
                 'feedback_id': header_feedback_id
             },
-            'timestamp': int(datetime.datetime.now().timestamp())
+            'timestamp': int(datetime.datetime.now().timestamp()),
+            '_v': 1
         })
 
-        return message, from_addr, to_addr, multipart.as_string()
+        return message, to_addr, multipart.as_string()

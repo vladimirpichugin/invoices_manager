@@ -1,0 +1,15 @@
+Напоминание об оплате
+
+Привет, %first_name%.
+
+%text% № %id% «%name%», созданный %date_created%, должен быть оплачен не позднее %date_due%.
+
+Итого: %currency_l%%total%%currency_r%
+  
+Перейти к оплате:
+https://pichugin.life/invoice?id=%_id%
+
+%first_name%, вы получили это сообщение, потому что указали электро-почту %email% при регистрации на сайте pichugin.life.
+
+Если вы больше не хотите получать письма, вы можете изменить настройки рассылки или отписаться в профиле: https://pichugin.life/login?profile&act=settings&s=invoices
+Не отвечайте на это письмо.

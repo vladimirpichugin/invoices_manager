@@ -1,15 +1,16 @@
 {
   "invoice.receipt.mail.subject": "Квитанция об оплате счёта № %id%",
-  "invoice.receipt.mail.preview": "Спешим сообщить о получении платежа. Счёт № %id%: %name%.",
+  "invoice.receipt.mail.preview": "Уведомление от сайта pichugin.life.",
 
-  "invoice.notify.mail.subject": "Напоминание о счёте № %id%",
-  "invoice.notify.mail.preview": "Счёт № %id%: %name%.",
-  "invoice.notify.mail.unpaid.subject": "Уведомление о неоплаченном счёте",
-  "invoice.notify.mail.unpaid.preview": "Счёт № %id%: %name%.",
-  "invoice.notify.mail.unpaid.first.subject": "Первое уведомление о неоплаченном счёте",
-  "invoice.notify.mail.unpaid.first.preview": "Счёт № %id%: %name%.",
-  "invoice.notify.mail.unpaid.second.subject": "Второе уведомление о неоплаченном счёте",
-  "invoice.notify.mail.unpaid.second.preview": "Счёт № %id%: %name%.",
-  "invoice.notify.mail.unpaid.last.subject": "Третье и последнее уведомление о неоплаченном счёте",
-  "invoice.notify.mail.unpaid.last.preview": "Счёт № %id%: %name%."
+  "invoice.notify.mail.subject": "Напоминание об оплате счёта № %id%",
+  "invoice.notify.mail.preview": "Уведомление от сайта pichugin.life.",
+  "invoice.notify.mail.text": "Письмо является напоминанием о том, что счёт",
+
+  "invoice.notify.mail.unpaid.subject": "Повтороное напоминание о неоплаченном счёте № %id%",
+  "invoice.notify.mail.unpaid.preview": "Уведомление от сайта pichugin.life.",
+  "inovice.notify.mail.unpaid.text": "Письмо является повторным напоминанием о том, что счёт",
+
+  "invoice.notify.mail.unpaid.last.subject": "Третье и последнее уведомление о неоплаченном счёте № %id%",
+  "invoice.notify.mail.unpaid.last.preview": "Уведомление от сайта pichugin.life.",
+  "invoice.notify.mail.unpaid.last.text": "Письмо является третьим и последним напоминанием о том, что счёт"
 }
