@@ -36,6 +36,9 @@ def invoice_notify():
 
 
 def invoice_receipt():
+	from_addr = Settings.SMTP_RECEIPT_USER
+	from_name = Settings.SMTP_RECEIPT_NAME
+
 	invoices = storage.get_invoices()
 
 	for invoice in invoices:
@@ -55,33 +58,34 @@ def invoice_receipt():
 			payee = storage.get_client(invoice.get('payee').get('id'))
 			payer = storage.get_client(invoice.get('payer').get('id'))
 
-			mail_delivery_report, from_addr, to_addr, msg = MailInvoiceReceipt.paid(
+			delivery_report, to_addr, msg = MailInvoiceReceipt.make(
 				invoice=invoice,
 				payee=payee,
-				payer=payer
+				payer=payer,
+				from_addr=from_addr,
+				from_name=from_name
 			)
 
 			try:
-				mail_client = Mail.get_mail_client()
-				mail_client.login(user=Settings.SMTP_RECEIPT_USER, password=Settings.SMTP_RECEIPT_PASS)
-			except Exception as e:
-				raise NotificationDeliveryProblem('Can\'t init SMTP client.') from e
+				send_message = Mail.send(
+					user=from_addr,
+					password=Settings.SMTP_ALERT_PASS,
+					to_addr=to_addr,
+					msg=msg
+				)
 
-			try:
-				send_message = mail_client.sendmail(from_addr, to_addr, msg)
 				logger.debug(f'Send MAIL from <{from_addr}> to <{to_addr}>, response: {send_message}')
+
+				invoice['_informed_receipt'] = True
+				storage.save_invoice(invoice)
+
+				logger.debug(f'MessageDeliveryReport: {delivery_report}')
+				save = storage.save_report(delivery_report)
+				logger.debug(f'Save MessageDeliveryReport: {save}')
 			except smtplib.SMTPRecipientsRefused as e:
 				raise NotificationDeliveryProblem('Can\'t send mail.') from e
-			finally:
-				mail_client.quit()
-
-			logger.debug(f'MessageDeliveryReport: {mail_delivery_report}')
-			save = storage.save_report(mail_delivery_report)
-			logger.debug(f'Save MessageDeliveryReport: {save}')
-
-			invoice['_informed_receipt'] = True
-
-			storage.save_invoice(invoice)
+			except Exception as e:
+				raise NotificationDeliveryProblem('Can\'t init SMTP client.') from e
 
 
 def console():
