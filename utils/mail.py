@@ -52,3 +52,13 @@ class Mail:
         multipart.attach(html)
 
         return multipart
+
+    @staticmethod
+    def send(user, password, to_addr, msg):
+        mail_client = Mail.get_mail_client()
+        mail_client.login(user=user, password=password)
+
+        send_message = mail_client.sendmail(user, to_addr, msg)
+        mail_client.quit()
+
+        return send_message
