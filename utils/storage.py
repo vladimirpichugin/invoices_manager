@@ -57,17 +57,19 @@ class Storage:
         return auto_invoices
 
     def save_invoice(self, invoice: Invoice) -> bool:
+        invoice_id = invoice.get('_id')
+
         if not invoice.changed:
-            logger.debug(f'Invoice <{invoice.id}> already saved, data not changed.')
+            logger.debug(f'Invoice <{invoice_id}> already saved, data not changed.')
             return True
 
-        save = self.save_data(self.invoices, invoice.id, invoice)
+        save = self.save_data(self.invoices, invoice_id, invoice)
 
         if save:
-            logger.debug(f'Invoice <{invoice.id}> saved, result: {save}')
+            logger.debug(f'Invoice <{invoice_id}> saved, result: {save}')
             return True
 
-        logger.error(f'Invoice <{invoice.id}> not saved, result: {save}')
+        logger.error(f'Invoice <{invoice_id}> not saved, result: {save}')
 
         return False
 
