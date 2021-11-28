@@ -16,6 +16,7 @@ class InvoiceMail:
         html = load_assets_file('invoice_{}_ru.html'.format(message_key))
         subject = L10n.get('invoice.{}.mail.subject'.format(message_key))
         preview = L10n.get('invoice.{}.mail.preview'.format(message_key))
+        text = L10n.get('invoice.{}.mail.text'.format(message_key))
         placeholders = dict(zip_longest(Settings.PLACEHOLDERS.get(message_key.upper()), []))
 
         invoice_id = invoice.get('id')
@@ -44,6 +45,7 @@ class InvoiceMail:
         placeholders['first_name'] = first_name
         placeholders['payee'] = payee_name
         placeholders['preview'] = preview
+        placeholders['text'] = text
         placeholders['year'] = datetime.datetime.now().year
 
         for key, value in dict(invoice).items():
