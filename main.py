@@ -28,8 +28,89 @@ def run_threaded(name, func):
 	job_thread.start()
 
 
-def auto_invoice():
-	pass
+def auto_invoice(pre_next_month=False):
+	auto_invoices = storage.get_auto_invoices()
+	dt = get_first_day_of_month_dt(pre_next_month)
+	payee_name = 'Владимир Пичугин'
+
+	for auto_invoice in auto_invoices:
+		a_i_id = auto_invoice.get('_id')
+		invoice_name = auto_invoice.get('name', a_i_id)
+
+		invoice_id = '{id}_{month}_{year}'.format(
+			id=a_i_id,
+			month=str(dt.month),
+			year=str(dt.strftime('%y'))
+		)
+
+		items = auto_invoice.get('items', [])
+		gateways = auto_invoice.get('gateways', [])
+
+		payee_id = auto_invoice.get('payee', {}).get('id')
+		payers = auto_invoice.get('payers', [])
+
+		currency = auto_invoice.get('currency', 'RUB')
+		due = int(auto_invoice.get('due', 604800))
+
+		for payer in payers:
+			payer_id = payer.get('id')
+			payer_name = parse_name(storage.get_client(payer_id))
+
+			find_invoice = storage.invoices.find_one({'id': invoice_id, 'payer.id': payer_id})
+			if find_invoice:
+				continue
+
+			prepaid = payer.get('prepaid', False)
+
+			invoice = Invoice(Settings.INVOICE_TEMPLATE)
+
+			invoice.update(Settings.INVOICE_TEMPLATE)
+
+			invoice['_id'] = str(uuid.uuid4())
+			invoice['id'] = invoice_id
+			invoice['name'] = invoice_name
+			invoice['status'] = 'UNPAID'
+			invoice['currency'] = currency
+			invoice['gateways'] = payer.get('gateways', gateways)
+			invoice['items'] = payer.get('items', items)
+			invoice['payer'] = {'id': payer_id, 'payer': payer_name}
+			invoice['payee'] = {'id': payee_id, 'payee': payee_name}
+			invoice['created'] = int(dt.timestamp())
+			invoice['due'] = int(dt.timestamp()+due)
+
+			invoice['name'] = invoice['name'].replace(
+				'%month%',
+				L10n.get("months.nom.{month}".format(month=dt.strftime('%B'))).title()
+			).replace(
+				'%year%',
+				str(dt.strftime('%Y'))
+			)
+
+			for item in invoice['items']:
+				item['name'] = item['name'].replace(
+					'%month%',
+					L10n.get("months.nom.{month}".format(month=dt.strftime('%B'))).title()
+				).replace(
+					'%year%',
+					str(dt.strftime('%Y'))
+				)
+
+			if prepaid:
+				total, discount = 0, 0
+				for item in invoice['items']:
+					total += item.get('price', 0)
+					discount += item.get('discount', 0)
+				total -= discount
+
+				invoice['paid_timestamp'] = invoice['created']
+				invoice['status'] = 'PAID'
+				invoice['transactions'] = [{
+						'gateway': 'CREDIT',
+						'timestamp': invoice['created'],
+						'sum': total
+				}]
+
+			storage.save_invoice(invoice)
 
 
 def invoice_notify():
@@ -186,6 +267,8 @@ def console():
 						logger.info(f'Next run: {job.next_run}')
 				else:
 					logger.info('No tasks.')
+			elif cmd == "ai":
+				auto_invoice(pre_next_month=True)
 			elif cmd == "stop":
 				break
 			else:
