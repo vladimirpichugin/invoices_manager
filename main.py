@@ -186,12 +186,6 @@ def console():
 						logger.info(f'Next run: {job.next_run}')
 				else:
 					logger.info('No tasks.')
-			elif cmd == "test":
-				logger.debug('Test invoice_receipt')
-				invoice_receipt()
-			elif cmd == "test2":
-				logger.debug('Test invoice_notify')
-				invoice_notify()
 			elif cmd == "stop":
 				break
 			else:
