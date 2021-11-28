@@ -32,7 +32,23 @@
   "gateways.name.PAYPAL": "PayPal",
 
   "date_time": "%d %B %Y в %H:%M:%S",
+  "date": "%d %B %Y",
+  "time": "%H:%M:%S",
+
   "currency.RUB": "{value} ₽",
   "currency.EUR": "€ {value}",
-  "currency.USD": "$ {value}"
+  "currency.USD": "$ {value}",
+
+  "months.January": "января",
+  "months.February": "февраля",
+  "months.March": "марта",
+  "months.April": "апреля",
+  "months.May": "мая",
+  "months.June": "июня",
+  "months.July": "июля",
+  "months.August": "августа",
+  "months.September": "сентября",
+  "months.October": "октября",
+  "months.November": "ноября",
+  "months.December": "декабря"
 }

@@ -10,24 +10,6 @@ from .json import Json
 L10n = Json('assets/L10n_ru.json')
 
 
-def get_currency(currency) -> (str, str):
-    currency = currency.upper()
-
-    currency_list = {'RUB': '₽', 'EUR': '€', 'USD': '$'}
-    currency_position = {'RUB': 'RIGHT'}
-
-    return currency_list.get(currency, currency), currency_position.get(currency, 'LEFT')
-
-
-def get_months() -> dict:
-    return {
-      'January': 'января', 'February': 'февраля', 'March': 'марта',
-      'April': 'апреля', 'May': 'мая', 'June': 'июня', 'July': 'июля',
-      'August': 'августа', 'September': 'сентября', 'October': 'октября',
-      'November': 'ноября', 'December': 'декабря'
-    }
-
-
 def load_assets_file(file) -> str:
     with open(os.path.join(os.getcwd(), 'assets', file), 'r', encoding='utf8') as f:
         return f.read().strip()
@@ -81,7 +63,7 @@ def format_date(timestamp) -> str:
 
     date = dt.strftime(L10n.get('date_time')).split(' ')
 
-    date[1] = get_months()[date[1]]
+    date[1] = L10n.get("months.{month}").format(month=date[1])
 
     date = ' '.join(date)
 
