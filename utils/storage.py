@@ -16,6 +16,7 @@ class Storage:
         self.clients = self.db.get_collection(Settings.MONGO_C_CLIENTS)
         self.invoices = self.db.get_collection(Settings.MONGO_C_INVOICES)
         self.messages = self.db.get_collection(Settings.MONGO_C_MESSAGES)
+        self.auto_invoices = self.db.get_collection(Settings.MONGO_C_AUTO_INVOICES)
 
     def get_client(self, client_id: str):
         data = self.get_data(self.clients, client_id)
@@ -45,6 +46,15 @@ class Storage:
             invoices.append(Invoice(invoice))
 
         return invoices
+
+    def get_auto_invoices(self):
+        data = self.auto_invoices.find({})
+
+        auto_invoices = []
+        for auto_invoice in data:
+            auto_invoices.append(SDict(auto_invoice))
+
+        return auto_invoices
 
     def save_invoice(self, invoice: Invoice) -> bool:
         if not invoice.changed:
