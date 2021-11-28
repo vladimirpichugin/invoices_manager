@@ -2,6 +2,7 @@
 # Author: Vladimir Pichugin <vladimir@pichug.in>
 import os
 import datetime
+from dateutil.relativedelta import relativedelta
 
 from settings import Settings
 
@@ -71,4 +72,17 @@ def format_date(timestamp) -> str:
 
 
 def parse_name(client) -> str:
-    return f"{client.getraw('first_name', '') + ' ' + client.getraw('last_name', '')}".strip()
+    first_name = client.getraw('first_name', '') or ''
+    last_name = client.getraw('last_name', '') or ''
+
+    return "{} {}".format(first_name, last_name).strip()
+
+
+def get_first_day_of_month_dt(next_month=False):
+    now = datetime.datetime.now()
+
+    dt = datetime.datetime(day=1, month=now.month, year=now.year)
+    if next_month:
+        return dt + relativedelta(months=1)
+
+    return dt
