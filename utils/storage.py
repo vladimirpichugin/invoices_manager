@@ -2,7 +2,7 @@
 # Author: Vladimir Pichugin <vladimir@pichug.in>
 import pymongo
 from .data import SDict, Invoice, Client, MessageDeliveryReport
-from .helpers import init_logger
+from .logger import init_logger
 
 from settings import Settings
 

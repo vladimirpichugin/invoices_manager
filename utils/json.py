@@ -2,7 +2,7 @@
 # Author: Vladimir Pichugin <vladimir@pichug.in>
 import json
 
-from .helpers import init_logger
+from .logger import init_logger
 
 logger = init_logger()
 

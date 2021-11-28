@@ -4,6 +4,7 @@ import datetime
 import smtplib
 import threading
 import schedule
+import uuid
 
 from utils import *
 from utils.exceptions import NotificationDeliveryProblem
@@ -32,17 +33,50 @@ def auto_invoice():
 
 
 def invoice_notify():
-	pass
-
-
-def invoice_receipt():
-	from_addr = Settings.SMTP_RECEIPT_USER
-	from_name = Settings.SMTP_RECEIPT_NAME
-
 	invoices = storage.get_invoices()
 
 	for invoice in invoices:
-		if invoice.get('_informed_receipt'):
+		if invoice.get('status') != 'UNPAID':
+			continue
+
+		if not invoice.get('_informed_notify'):
+			message = "notify"
+			invoice_tag = '_informed_notify'
+		else:
+			continue
+			#if not invoice.get('_informed_notify_unpaid'):
+			#	message = "invoice.notify.mail.unpaid"
+			#   invoice_tag =
+			#elif not invoice.get('_informed_notify_unpaid_last'):
+			#	message = "invoice.notify.mail.unpaid.last"
+		    #   invoice_tag =
+
+		ok = False
+		try:
+			mail_send, delivery_report = send_message(invoice=invoice, message=message)
+			ok = True
+			logger.debug(f"Notify was sent successfully, delivery report: {delivery_report} SMTP response: {mail_send}")
+		except Exception:
+			logger.error("Can't send notify, problems with SMTP client", exc_info=True)
+
+		if ok:
+			try:
+				storage.save_report(delivery_report)
+			except Exception:
+				logger.error(f"Problems with saving notify delivery-report", exc_info=True)
+
+			try:
+				invoice[invoice_tag] = True
+				storage.save_invoice(invoice)
+			except Exception:
+				logger.error(f"Problems with saving notify informed status", exc_info=True)
+
+
+def invoice_receipt():
+	invoices = storage.get_invoices()
+
+	for invoice in invoices:
+		if invoice.get('status') != 'PAID':
 			continue
 
 		paid_timestamp = int(invoice.get('paid_timestamp') or 0)
@@ -50,42 +84,81 @@ def invoice_receipt():
 		if not paid_timestamp:
 			continue
 
+		if invoice.get('_informed_receipt'):
+			continue
+
 		paid_dt = datetime.datetime.fromtimestamp(paid_timestamp)
 
 		time_diff = datetime.datetime.today() - paid_dt
 
 		if time_diff.total_seconds() < 28800:
-			payee = storage.get_client(invoice.get('payee').get('id'))
-			payer = storage.get_client(invoice.get('payer').get('id'))
-
-			delivery_report, to_addr, msg = MailInvoiceReceipt.make(
-				invoice=invoice,
-				payee=payee,
-				payer=payer,
-				from_addr=from_addr,
-				from_name=from_name
-			)
-
+			ok = False
 			try:
-				send_message = Mail.send(
-					user=from_addr,
-					password=Settings.SMTP_ALERT_PASS,
-					to_addr=to_addr,
-					msg=msg
-				)
+				mail_send, delivery_report = send_message(invoice=invoice, message='receipt')
+				ok = True
+				logger.debug(f"Receipt was sent successfully, delivery report: {delivery_report} SMTP response: {mail_send}")
+			except Exception:
+				logger.error("Can't send receipt, problems with SMTP client", exc_info=True)
 
-				logger.debug(f'Send MAIL from <{from_addr}> to <{to_addr}>, response: {send_message}')
+			if ok:
+				try:
+					storage.save_report(delivery_report)
+				except Exception:
+					logger.error(f"Problems with saving receipt delivery-report", exc_info=True)
 
-				invoice['_informed_receipt'] = True
-				storage.save_invoice(invoice)
+				try:
+					invoice['_informed_receipt'] = True
+					storage.save_invoice(invoice)
+				except Exception:
+					logger.error(f"Problems with saving receipt informed status", exc_info=True)
 
-				logger.debug(f'MessageDeliveryReport: {delivery_report}')
-				save = storage.save_report(delivery_report)
-				logger.debug(f'Save MessageDeliveryReport: {save}')
-			except smtplib.SMTPRecipientsRefused as e:
-				raise NotificationDeliveryProblem('Can\'t send mail.') from e
-			except Exception as e:
-				raise NotificationDeliveryProblem('Can\'t init SMTP client.') from e
+
+def send_message(invoice, message, service='email'):
+	if service != 'email':
+		return Warning('Unknown service')
+
+	if message == 'receipt':
+		from_addr = Settings.SMTP_RECEIPT_USER
+		from_pass = Settings.SMTP_RECEIPT_PASS
+		header_service = Settings.SMTP_RECEIPT_HEADER_SERVICE
+	elif message == 'notify':
+		from_addr = Settings.SMTP_ALERT_USER
+		from_pass = Settings.SMTP_ALERT_PASS
+		header_service = Settings.SMTP_ALERT_HEADER_SERVICE
+	else:
+		raise Warning('Unknown message type')
+
+	message_id = str(uuid.uuid4())
+	invoice_id = invoice.get('_id')
+
+	payee = storage.get_client(invoice.get('payee').get('id'))
+	payer = storage.get_client(invoice.get('payer').get('id'))
+
+	to_addr, to_name, subject, html, plain = InvoiceMail.make(
+		message_id=message_id, invoice=invoice, payee=payee, payer=payer, message_key=message
+	)
+
+	logger.debug(f"[message id:{message_id}] Preparing mail-{header_service} ({invoice_id})")
+
+	headers = Mail.create_headers(message_id=message_id, invoice_id=invoice_id, service=header_service)
+
+	multipart = Mail.create_multipart(from_addr, Settings.SMTP_NAME, to_addr, to_name, subject, html, plain, headers)
+	msg = multipart.as_string()
+
+	delivery_report = Mail.create_delivery_report(invoice_id, message_id, from_addr, to_addr, to_name, subject, headers)
+
+	logger.info(f"[message id:{message_id}] Sending mail-{header_service} to <{to_addr}> ({invoice_id})`")
+
+	response = Mail.send(
+		user=from_addr,
+		password=from_pass,
+		to_addr=to_addr,
+		msg=msg
+	)
+
+	logger.info(f"[message id:{message_id}] Sending mail-{header_service} to <{to_addr}> ({invoice_id})\nResponse: {response}")
+
+	return response, delivery_report
 
 
 def console():

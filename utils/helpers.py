@@ -1,51 +1,22 @@
 # -*- coding: utf-8 -*-
 # Author: Vladimir Pichugin <vladimir@pichug.in>
 import os
-import pathlib
-import logging
+import datetime
 
 from settings import Settings
 
+from .json import Json
 
-def init_logger():
-    logger = logging.Logger('invoices_manager', level=logging.DEBUG if Settings.DEBUG else logging.INFO)
-
-    file_handler = get_logger_file_handler()
-    file_handler.setLevel(logging.DEBUG)
-
-    stream_handler = get_logger_stream_handler()
-    stream_handler.setLevel(level=logging.DEBUG if Settings.DEBUG else logging.INFO)
-
-    logger.addHandler(file_handler)
-    logger.addHandler(stream_handler)
-
-    return logger
+L10n = Json('assets/L10n_ru.json')
 
 
-def get_logger_formatter(f=u'%(pathname)s:%(lineno)d\n[%(asctime)s] %(levelname)-5s %(threadName)-15s: %(message)s') -> logging.Formatter:
-    return logging.Formatter(
-        fmt=f,
-        datefmt='%d.%m.%y %H:%M:%S')
+def get_currency(currency) -> (str, str):
+    currency = currency.upper()
 
+    currency_list = {'RUB': '₽', 'EUR': '€', 'USD': '$'}
+    currency_position = {'RUB': 'RIGHT'}
 
-def get_logger_file_handler() -> logging.FileHandler:
-    pathlib.Path('logs').mkdir(exist_ok=True)
-    file_handler = logging.FileHandler(os.path.join('logs', 'log.txt'), encoding='utf-8')
-
-    file_handler.setFormatter(get_logger_formatter())
-
-    return file_handler
-
-
-def get_logger_stream_handler() -> logging.StreamHandler:
-    stream_handler = logging.StreamHandler()
-    stream_handler.setFormatter(get_logger_formatter(u'[%(asctime)s] %(levelname)-5s %(threadName)-15s: %(message)s'))
-
-    return stream_handler
-
-
-def get_currency() -> dict:
-    return {'RUB': '₽', 'EUR': '€', 'USD': '$'}
+    return currency_list.get(currency, currency), currency_position.get(currency, 'LEFT')
 
 
 def get_months() -> dict:
@@ -72,9 +43,50 @@ def parse_placeholders(placeholders):
     return placeholders
 
 
-def replace_placeholders(placeholders, html, plain):
+def replace_placeholders(placeholders, html, plain) -> (str, str):
     for placeholder, placeholder_value in placeholders.items():
         html = html.replace(f'%{placeholder}%', str(placeholder_value))
         plain = plain.replace(f'%{placeholder}%', str(placeholder_value))
 
     return html, plain
+
+
+def parse_header_feedback_id(message_id, invoice_id, service) -> str:
+    header = L10n.get('smtp.header.feedback_id')
+
+    header_feedback_id = header.format(
+        message_id=message_id,
+        invoice_id=invoice_id,
+        service=service
+    )
+
+    return header_feedback_id
+
+
+def get_gateways() -> list:
+    return ['CASH', 'CREDIT', 'GIFT', 'CARD_ALFABANK', 'CARD_SBERBANK', 'SBP_ALFABANK', 'SBP_SBERBANK', 'QIWI', 'YOOMONEY', 'WEBMONEY_R', 'WEBMONEY_P', 'WEBMONEY_Z', 'WEBMONEY_E', 'PAYPAL']
+
+
+def get_gateway(gateway: str):
+    gateway = gateway.upper()
+
+    if gateway not in get_gateways():
+        return None
+
+    return L10n.get(f'gateways.name.{gateway}', gateway)
+
+
+def format_date(timestamp) -> str:
+    dt = datetime.datetime.fromtimestamp(timestamp)
+
+    date = dt.strftime(L10n.get('date_time')).split(' ')
+
+    date[1] = get_months()[date[1]]
+
+    date = ' '.join(date)
+
+    return date
+
+
+def parse_name(client) -> str:
+    return f"{client.getraw('first_name', '') + ' ' + client.getraw('last_name', '')}".strip()

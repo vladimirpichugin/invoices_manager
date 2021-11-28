@@ -2,11 +2,15 @@
 # Author: Vladimir Pichugin <vladimir@pichug.in>
 import smtplib
 import time
+import datetime
 import ssl
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.header import Header
 from email import utils as email_utils
+
+from .data import MessageDeliveryReport
+from .helpers import parse_header_feedback_id
 
 from settings import Settings
 
@@ -54,11 +58,46 @@ class Mail:
         return multipart
 
     @staticmethod
-    def send(user, password, to_addr, msg):
+    def create_delivery_report(invoice_id, message_id, from_addr, to_addr, to_name, subject, headers) -> MessageDeliveryReport:
+        delivery_report = MessageDeliveryReport.create({
+            '_id': message_id,
+            '_v': 1,
+            '_type': 'email',
+            'invoice_id': invoice_id,
+            'service': headers['X-Pichugin-Service'],
+            'message': {
+                'to_addr': to_addr,
+                'to_name': to_name,
+                'from_addr': from_addr,
+                'subject': subject,
+                'feedback_id': headers['Feedback-ID']
+            },
+            'timestamp': int(datetime.datetime.now().timestamp())
+        })
+
+        return delivery_report
+
+    @staticmethod
+    def create_headers(message_id, invoice_id, service):
+        header_feedback_id = parse_header_feedback_id(
+            message_id=message_id,
+            invoice_id=invoice_id,
+            service=service
+        )
+
+        headers = {
+            'Feedback-ID': header_feedback_id,
+            'X-Pichugin-Service': service
+        }
+
+        return headers
+
+    @staticmethod
+    def send(user, password, to_addr, msg) -> smtplib.SMTP:
         mail_client = Mail.get_mail_client()
         mail_client.login(user=user, password=password)
 
-        send_message = mail_client.sendmail(user, to_addr, msg)
+        send_mail = mail_client.sendmail(user, to_addr, msg)
         mail_client.quit()
 
-        return send_message
+        return send_mail
