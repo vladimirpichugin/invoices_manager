@@ -1,6 +1,7 @@
 {
   "invoice.receipt.mail.subject": "Квитанция об оплате счёта № %id%",
   "invoice.receipt.mail.preview": "Уведомление от сайта pichugin.life.",
+  "invoice.receipt.mail.text": "",
 
   "invoice.notify.mail.subject": "Напоминание об оплате счёта № %id%",
   "invoice.notify.mail.preview": "Уведомление от сайта pichugin.life.",
@@ -38,6 +39,19 @@
   "currency.RUB": "{value} ₽",
   "currency.EUR": "€ {value}",
   "currency.USD": "$ {value}",
+
+  "months.nom.January": "январь",
+  "months.nom.February": "февраль",
+  "months.nom.March": "март",
+  "months.nom.April": "апрель",
+  "months.nom.May": "май",
+  "months.nom.June": "июнь",
+  "months.nom.July": "июль",
+  "months.nom.August": "август",
+  "months.nom.September": "сентябрь",
+  "months.nom.October": "октябрь",
+  "months.nom.November": "ноябрь",
+  "months.nom.December": "декабрь",
 
   "months.January": "января",
   "months.February": "февраля",
