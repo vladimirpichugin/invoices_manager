@@ -12,5 +12,27 @@
 
   "invoice.notify.mail.unpaid.last.subject": "Третье и последнее уведомление о неоплаченном счёте № %id%",
   "invoice.notify.mail.unpaid.last.preview": "Уведомление от сайта pichugin.life.",
-  "invoice.notify.mail.unpaid.last.text": "Письмо является третьим и последним напоминанием о том, что счёт"
+  "invoice.notify.mail.unpaid.last.text": "Письмо является третьим и последним напоминанием о том, что счёт",
+
+  "smtp.header.feedback_id": "{message_id}:{invoice_id}:{service}:Pichugin",
+
+  "gateways.name.CASH": "Наличные деньги",
+  "gateways.name.CREDIT": "Кредит",
+  "gateways.name.GIFT": "Подарок",
+  "gateways.name.CARD_ALFABANK": "Карта в «Альфа-Банк»",
+  "gateways.name.CARD_SBERBANK": "Карта в «СберБанк»",
+  "gateways.name.SBP_ALFABANK": "По номеру телефона в «Альфа-Банк» (СБП)",
+  "gateways.name.SBP_SBERBANK": "По номеру телефона в «СберБанк» (СБП)",
+  "gateways.name.QIWI": "Qiwi",
+  "gateways.name.YOOMONEY": "YooMoney",
+  "gateways.name.WEBMONEY_R": "WebMoney R",
+  "gateways.name.WEBMONEY_P": "WebMoney P",
+  "gateways.name.WEBMONEY_Z": "WebMoney Z",
+  "gateways.name.WEBMONEY_E": "WebMoney E",
+  "gateways.name.PAYPAL": "PayPal",
+
+  "date_time": "%d %B %Y в %H:%M:%S",
+  "currency.RUB": "{value} ₽",
+  "currency.EUR": "€ {value}",
+  "currency.USD": "$ {value}"
 }
