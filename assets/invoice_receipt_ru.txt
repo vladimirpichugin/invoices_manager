@@ -13,8 +13,7 @@
 Получатель: %payee%
 
 Итого: %total%
-<!-- commission-start -->Комиссия: %commission%<!-- commission-end -->
-<!-- commission-start -->Скидка: %discount%<!-- discount-end -->
+Скидка: %discount%
 К оплате: %paid%
 
 Ссылка на счёт:
@@ -22,5 +21,5 @@ https://pichugin.life/invoice?id=%_id%
 
 %first_name%, вы получили это сообщение, потому что указали электро-почту %email% при регистрации на сайте https://pichugin.life.
 
-Если вы больше не хотите получать письма, вы можете изменить настройки рассылки или отписаться в профиле: https://pichugin.life/login?profile&act=settings&s=invoices
+Если вы больше не хотите получать письма, вы можете изменить настройки рассылки или отписаться в профиле: https://pichugin.life/login?profile&settings=invoices
 Не отвечайте на это письмо.
