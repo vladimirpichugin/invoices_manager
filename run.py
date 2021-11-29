@@ -14,8 +14,8 @@ if __name__ == "__main__":
     console_thread.start()
 
     schedule.every(1).hour.do(main.run_threaded, name='AutoInvoice', func=main.auto_invoice).run()
-    schedule.every(10).minutes.do(main.run_threaded, name='Notify', func=main.invoice_notify).run()
-    schedule.every(10).minutes.do(main.run_threaded, name='Receipt', func=main.invoice_receipt).run()
+    schedule.every(1).minutes.do(main.run_threaded, name='Notify', func=main.invoice_notify).run()
+    schedule.every(1).minutes.do(main.run_threaded, name='Receipt', func=main.invoice_receipt).run()
 
     # Поддерживать работу основного потока, пока поток демона жив.
     while True:
