@@ -11,7 +11,6 @@ from settings import Settings
 class InvoiceMail:
     @staticmethod
     def make(message_key, message_id, invoice, payee, payer):
-        # (<!--(?P<open_tag>.+?)-->)(?P<payload>.+?)(<!--(?P<close_tag>.+?)-->)
         plain = load_assets_file('invoice_{}_ru.txt'.format(message_key))
         html = load_assets_file('invoice_{}_ru.html'.format(message_key))
         subject = L10n.get('invoice.{}.mail.subject'.format(message_key))
@@ -26,8 +25,7 @@ class InvoiceMail:
         if invoice_currency not in ['RUB', 'EUR', 'USD']:
             invoice_currency = 'RUB'
 
-        # to_addr = payer.getraw('email')
-        to_addr = 'vladimir@pichug.in'  # todo: remove debug
+        to_addr = payer.getraw('email')
         to_name = payer_name = parse_name(payer)
         first_name = payer.getraw('first_name', to_name)
         payee_name = parse_name(payee)
@@ -83,7 +81,7 @@ class InvoiceMail:
             if gateway:
                 placeholders['gateway'] = get_gateway(gateway)
 
-        for key in ['total', 'discount', 'commission', 'paid']:
+        for key in ['total', 'discount', 'paid']:
             try:
                 if placeholders[key]:
                     placeholders[key] = f'{float(placeholders[key]):,.2f}'
