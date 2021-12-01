@@ -1,13 +1,10 @@
 # -*- coding: utf-8 -*-
 # Author: Vladimir Pichugin <vladimir@pichug.in>
-import datetime
-import smtplib
 import threading
 import schedule
 import uuid
 
 from utils import *
-from utils.exceptions import NotificationDeliveryProblem
 
 logger = init_logger()
 
@@ -245,18 +242,26 @@ def send_message(invoice, message, service='email'):
 def console():
 	while True:
 		try:
-			cmd_args = input().split(' ')
-			cmd = cmd_args[0]
+			cmd, arg = None, None
+
+			try:
+				args = input().split(' ')
+				if len(args) > 0:
+					cmd = args[0]
+				if len(args) > 1:
+					arg = args[1]
+			except EOFError:
+				continue
 
 			if cmd == "invoice":
-				logger.info("Find invoice by id {}".format(str(cmd_args[1])))
-				invoice = storage.get_invoice(cmd_args[1])
+				logger.info("Find invoice by id {}".format(arg))
+				invoice = storage.get_invoice(arg)
 
 				for key, value in invoice.items():
 					logger.info(f"{key}: {value}")
 			elif cmd == "client":
-				logger.info("Find client by id {}".format(str(cmd_args[1])))
-				client = storage.get_client(cmd_args[1])
+				logger.info("Find client by id {}".format(arg))
+				client = storage.get_client(arg)
 
 				for key, value in client.items():
 					logger.info(f"{key}: {value}")
@@ -268,7 +273,9 @@ def console():
 				else:
 					logger.info('No tasks.')
 			elif cmd == "ai":
-				auto_invoice(pre_next_month=True)
+				pre_next_month = True if arg else False
+				logger.info(f'pre_next_month: {pre_next_month}')
+				auto_invoice(pre_next_month=pre_next_month)
 			elif cmd == "stop":
 				break
 			else:
