@@ -72,7 +72,7 @@ def auto_invoice(pre_next_month=False):
 			invoice['items'] = payer.get('items', items)
 			invoice['payer'] = {'id': payer_id, 'payer': payer_name}
 			invoice['payee'] = {'id': payee_id, 'payee': payee_name}
-			invoice['created'] = int(dt.timestamp())
+			invoice['created'] = int(datetime.datetime.now().timestamp())
 			invoice['due'] = int(dt.timestamp()+due)
 
 			invoice['name'] = invoice['name'].replace(
