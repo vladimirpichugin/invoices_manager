@@ -31,6 +31,9 @@ def auto_invoice(pre_next_month=False):
 	payee_name = 'Владимир Пичугин'
 
 	for auto_invoice in auto_invoices:
+		if auto_invoice.get('disabled'):
+			continue
+
 		a_i_id = auto_invoice.get('_id')
 		invoice_name = auto_invoice.get('name', a_i_id)
 
