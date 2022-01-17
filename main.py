@@ -172,7 +172,7 @@ def invoice_receipt():
 
 		time_diff = datetime.datetime.today() - paid_dt
 
-		if time_diff.total_seconds() < 28800:
+		if time_diff.total_seconds() < 43200:
 			ok = False
 			try:
 				mail_send, delivery_report = send_message(invoice=invoice, message='receipt')
