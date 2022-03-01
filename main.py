@@ -120,6 +120,9 @@ def invoice_notify():
 		if invoice.get('status') != 'UNPAID':
 			continue
 
+		if invoice.get('_version', None) != Settings.INVOICE_VERSION:
+			continue
+
 		if not invoice.get('_informed_notify'):
 			message = "notify"
 			invoice_tag = '_informed_notify'

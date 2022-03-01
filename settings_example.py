@@ -43,6 +43,8 @@ class Settings:
         ]
     }
 
+    INVOICE_VERSION = 2
+
     INVOICE_TEMPLATE = {
         'currency': 'RUB',
         'status': None,
