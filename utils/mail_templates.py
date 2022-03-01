@@ -19,7 +19,7 @@ class InvoiceMail:
         placeholders = dict(zip_longest(Settings.PLACEHOLDERS.get(message_key.upper()), []))
 
         invoice_id = invoice.get('id')
-        invoice_name = invoice.get('name')
+        invoice_name = invoice.get('name', invoice_id)
 
         invoice_currency = invoice.get('currency', 'RUB')
         if invoice_currency not in ['RUB', 'EUR', 'USD']:
