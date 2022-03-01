@@ -20,16 +20,26 @@
   "gateways.name.CASH": "Наличные деньги",
   "gateways.name.CREDIT": "Кредит",
   "gateways.name.GIFT": "Подарок",
-  "gateways.name.CARD_ALFABANK": "Карта в «Альфа-Банк»",
-  "gateways.name.CARD_SBERBANK": "Карта в «СберБанк»",
+
+  "gateways.name.ALFABANK": "Перевод между клиентами «Альфа-Банк»",
+  "gateways.name.CARD_ALFABANK": "По номеру карты в «Альфа-Банк»",
+  "gateways.name.LINK_ALFABANK": "По ссылке в «Альфа-Банк»",
   "gateways.name.SBP_ALFABANK": "По номеру телефона в «Альфа-Банк» (СБП)",
-  "gateways.name.SBP_SBERBANK": "По номеру телефона в «СберБанк» (СБП)",
-  "gateways.name.QIWI": "Qiwi",
-  "gateways.name.YOOMONEY": "YooMoney",
+
+  "gateways.name.SBERBANK": "Перевод между клиентами «Сбер»",
+  "gateways.name.CARD_SBERBANK": "По номеру карты в «Сбер»",
+  "gateways.name.SBP_SBERBANK": "По номеру телефона в «Сбер» (СБП)",
+
+  "gateways.name.QIWI": "По номеру телефона в «Qiwi»",
+  "gateways.name.CARD_QIWI": "По номеру карты в «Qiwi»",
+  "gateways.name.QIWI_P2P": "Счёт в «Qiwi»",
+  "gateways.name.LINK_QIWI": "По ссылке в «Qiwi»",
+
   "gateways.name.WEBMONEY_R": "WebMoney R",
   "gateways.name.WEBMONEY_P": "WebMoney P",
   "gateways.name.WEBMONEY_Z": "WebMoney Z",
   "gateways.name.WEBMONEY_E": "WebMoney E",
+
   "gateways.name.PAYPAL": "PayPal",
 
   "date_time": "%d %B %Y в %H:%M:%S",
