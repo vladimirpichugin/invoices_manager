@@ -38,8 +38,9 @@ class Storage:
 
         return invoice
 
-    def get_invoices(self):
-        data = self.invoices.find({})
+    def get_invoices(self, find_filter={}):
+        find_filter['_version'] = Settings.INVOICE_VERSION
+        data = self.invoices.find(find_filter)
 
         invoices = []
         for invoice in data:

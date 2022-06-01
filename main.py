@@ -60,7 +60,12 @@ def auto_invoice(pre_next_month=False):
 			if find_invoice:
 				continue
 
-			prepaid = payer.get('prepaid', False)
+			payer_gateways = payer.get('gateways') or gateways
+			payer_currency = payer.get('currency') or currency
+
+			prepaid = payer.get('prepaid') or False
+			if payer_gateways[0] == 'GIFT':
+				prepaid = True
 
 			invoice = Invoice(Settings.INVOICE_TEMPLATE)
 
@@ -70,8 +75,8 @@ def auto_invoice(pre_next_month=False):
 			invoice['id'] = invoice_id
 			invoice['name'] = invoice_name
 			invoice['status'] = 'UNPAID'
-			invoice['currency'] = currency
-			invoice['gateways'] = payer.get('gateways', gateways)
+			invoice['currency'] = payer_currency
+			invoice['gateways'] = payer_gateways
 			invoice['items'] = payer.get('items', items)
 			invoice['payer'] = {'id': payer_id, 'payer': payer_name}
 			invoice['payee'] = {'id': payee_id, 'payee': payee_name}
@@ -87,13 +92,9 @@ def auto_invoice(pre_next_month=False):
 			)
 
 			for item in invoice['items']:
-				item['name'] = item['name'].replace(
-					'%month%',
-					L10n.get("months.nom.{month}".format(month=dt.strftime('%B'))).title()
-				).replace(
-					'%year%',
-					str(dt.strftime('%Y'))
-				)
+				item['name'] = item['name'].\
+					replace('%month%', L10n.get("months.nom.{month}".format(month=dt.strftime('%B'))).title()).\
+					replace('%year%', str(dt.strftime('%Y')))
 
 			if prepaid:
 				total, discount = 0, 0
@@ -102,124 +103,168 @@ def auto_invoice(pre_next_month=False):
 					discount += item.get('discount', 0)
 				total -= discount
 
-				invoice['paid_timestamp'] = invoice['created']
-				invoice['status'] = 'PAID'
-				invoice['transactions'] = [{
-						'gateway': 'CREDIT',
+				transaction = {
+						'gateway': payer_gateways[0],
 						'timestamp': invoice['created'],
 						'sum': total
-				}]
+				}
+				invoice['transactions'] = [transaction]
+				invoice['status'] = 'PAID'
+				invoice['paid_timestamp'] = invoice['created']
 
 			storage.save_invoice(invoice)
 
 
 def invoice_notify():
-	invoices = storage.get_invoices()
+	dt = datetime.datetime.now()
+	dt_timestamp = int(dt.timestamp())
+	invoices = storage.get_invoices({'status': 'UNPAID', '_version': Settings.INVOICE_VERSION})
 
 	for invoice in invoices:
-		if invoice.get('status') != 'UNPAID':
+		if invoice.get('status') == 'PAID':
 			continue
 
-		if invoice.get('_version', None) != Settings.INVOICE_VERSION:
-			continue
+		created = datetime.datetime.fromtimestamp(invoice.get('created'))
+		due = datetime.datetime.fromtimestamp(invoice.get('due'))
 
-		if not invoice.get('_informed_notify'):
-			message = "notify"
-			invoice_tag = '_informed_notify'
+		message = None
+
+		notify_inform = invoice.get('_notify_inform', {})
+
+		if dt > due and 'notify_overdue' not in notify_inform:
+			message = 'notify_overdue'
+			notify_inform['notify_overdue'] = dt_timestamp
+			invoice['status'] = 'OVERDUE'
 		else:
-			continue
-			#if not invoice.get('_informed_notify_unpaid'):
-			#	message = "invoice.notify.mail.unpaid"
-			#   invoice_tag =
-			#elif not invoice.get('_informed_notify_unpaid_last'):
-			#	message = "invoice.notify.mail.unpaid.last"
-		    #   invoice_tag =
+			if 'notify' not in notify_inform:
+				message = 'notify'
+				notify_inform['notify'] = dt_timestamp
+			else:
+				diff = due.date() - created.date()
 
-		ok = False
-		try:
-			mail_send, delivery_report = send_message(invoice=invoice, message=message)
-			ok = True
-			logger.debug(f"Notify was sent successfully, delivery report: {delivery_report} SMTP response: {mail_send}")
-		except Exception:
-			logger.error("Can't send notify, problems with SMTP client", exc_info=True)
+				if diff.days <= 3:
+					continue
 
-		if ok:
-			try:
-				storage.save_report(delivery_report)
-			except Exception:
-				logger.error(f"Problems with saving notify delivery-report", exc_info=True)
+				due_diff = due.date() - dt.date()
+				due_diff = due_diff.days
 
-			try:
-				invoice[invoice_tag] = True
-				storage.save_invoice(invoice)
-			except Exception:
-				logger.error(f"Problems with saving notify informed status", exc_info=True)
+				if due_diff == 2 and ('notify_unpaid' not in notify_inform):
+					message = 'notify_unpaid'
+					notify_inform['notify_unpaid'] = dt_timestamp
+
+				if due_diff == 1 and ('notify_unpaid_final' not in notify_inform):
+					message = 'notify_unpaid_final'
+					notify_inform['notify_unpaid_final'] = dt_timestamp
+
+		if message:
+			ok = send_with_delivery_report(invoice=invoice, message=message)
+			if ok:
+				try:
+					invoice['_notify_inform'] = notify_inform
+					invoice.changed = True
+					storage.save_invoice(invoice)
+				except:
+					logger.error(f"Problems with saving invoice inform status", exc_info=True)
 
 
 def invoice_receipt():
-	invoices = storage.get_invoices()
+	invoices = storage.get_invoices({'status': 'PAID'})
 
 	for invoice in invoices:
-		if invoice.get('status') != 'PAID':
-			continue
+		notify_inform = invoice.get('_notify_inform', {})
 
-		paid_timestamp = int(invoice.get('paid_timestamp') or 0)
+		if 'paid' not in notify_inform:
+			notify_inform['paid'] = int(datetime.datetime.now().timestamp())
 
-		if not paid_timestamp:
-			continue
-
-		if invoice.get('_informed_receipt'):
-			continue
-
-		paid_dt = datetime.datetime.fromtimestamp(paid_timestamp)
-
-		time_diff = datetime.datetime.today() - paid_dt
-
-		if time_diff.total_seconds() < 43200:
-			ok = False
-			try:
-				mail_send, delivery_report = send_message(invoice=invoice, message='receipt')
-				ok = True
-				logger.debug(f"Receipt was sent successfully, delivery report: {delivery_report} SMTP response: {mail_send}")
-			except Exception:
-				logger.error("Can't send receipt, problems with SMTP client", exc_info=True)
-
+			ok = send_with_delivery_report(invoice=invoice, message='receipt')
 			if ok:
 				try:
-					storage.save_report(delivery_report)
-				except Exception:
-					logger.error(f"Problems with saving receipt delivery-report", exc_info=True)
-
-				try:
-					invoice['_informed_receipt'] = True
+					invoice['_notify_inform'] = notify_inform
+					invoice.changed = True
 					storage.save_invoice(invoice)
-				except Exception:
-					logger.error(f"Problems with saving receipt informed status", exc_info=True)
+				except:
+					logger.error(f"Problems with saving invoice inform status", exc_info=True)
+
+
+def invoice_notify_refunded():
+	invoices = storage.get_invoices({'status': 'REFUNDED'})
+
+	for invoice in invoices:
+		notify_inform = invoice.get('_notify_inform', {})
+
+		if 'refunded' not in notify_inform:
+			notify_inform['refunded'] = int(datetime.datetime.now().timestamp())
+
+			ok = send_with_delivery_report(invoice=invoice, message='notify_refund')
+			if ok:
+				try:
+					invoice['_notify_inform'] = notify_inform
+					invoice.changed = True
+					storage.save_invoice(invoice)
+				except:
+					logger.error(f"Problems with saving invoice inform status", exc_info=True)
+
+
+def invoice_notify_cancelled():
+	invoices = storage.get_invoices({'status': 'CANCELLED'})
+
+	for invoice in invoices:
+		notify_inform = invoice.get('_notify_inform', {})
+
+		if 'cancelled' not in notify_inform:
+			notify_inform['cancelled'] = int(datetime.datetime.now().timestamp())
+
+			ok = send_with_delivery_report(invoice=invoice, message='notify_cancel')
+			if ok:
+				try:
+					invoice['_notify_inform'] = notify_inform
+					invoice.changed = True
+					storage.save_invoice(invoice)
+				except:
+					logger.error(f"Problems with saving invoice inform status", exc_info=True)
+
+
+def send_with_delivery_report(invoice, message) -> bool:
+	try:
+		mail_send, delivery_report = send_message(invoice=invoice, message=message)
+		logger.debug(f"Message {message} was sent successfully, delivery report: {delivery_report} SMTP response: {mail_send}")
+	except:
+		logger.error(f"Can't send message {message}, problems with SMTP client.", exc_info=True)
+		return False
+
+	try:
+		storage.save_report(delivery_report)
+	except:
+		logger.error(f"Problems with saving notify delivery-report", exc_info=True)
+
+	return True
 
 
 def send_message(invoice, message, service='email'):
 	if service != 'email':
 		return Warning('Unknown service')
 
-	if message == 'receipt':
+	message_key = message.split('_')[0]
+
+	if message_key == 'receipt':
 		from_addr = Settings.SMTP_RECEIPT_USER
 		from_pass = Settings.SMTP_RECEIPT_PASS
 		header_service = Settings.SMTP_RECEIPT_HEADER_SERVICE
-	elif message == 'notify':
+	elif message_key == 'notify':
 		from_addr = Settings.SMTP_ALERT_USER
 		from_pass = Settings.SMTP_ALERT_PASS
 		header_service = Settings.SMTP_ALERT_HEADER_SERVICE
 	else:
-		raise Warning('Unknown message type')
+		raise Warning(f'Unknown message key {message_key}') from None
 
-	message_id = str(uuid.uuid4())
+	message_id = str(uuid.uuid4())  # Create message ID.
 	invoice_id = invoice.get('_id')
 
 	payee = storage.get_client(invoice.get('payee').get('id'))
 	payer = storage.get_client(invoice.get('payer').get('id'))
 
 	to_addr, to_name, subject, html, plain = InvoiceMail.make(
-		message_id=message_id, invoice=invoice, payee=payee, payer=payer, message_key=message
+		message=message, message_id=message_id, invoice=invoice, payee=payee, payer=payer
 	)
 
 	logger.debug(f"[message id:{message_id}] Preparing mail-{header_service} ({invoice_id})")

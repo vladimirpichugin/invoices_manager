@@ -64,7 +64,7 @@ def format_date(timestamp) -> str:
 
     date = dt.strftime(L10n.get('date_time')).split(' ')
 
-    date[1] = L10n.get("months.{month}".format(month=date[1]))
+    date[1] = L10n.get("months.gen.{month}".format(month=date[1]))
 
     date = ' '.join(date)
 

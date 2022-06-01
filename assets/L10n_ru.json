@@ -1,21 +1,24 @@
 {
-  "invoice.receipt.mail.subject": "Квитанция об оплате счёта № %id%",
-  "invoice.receipt.mail.preview": "Уведомление от сайта pichug.in.",
-  "invoice.receipt.mail.text": "",
+  "receipt.subject": "Квитанция об оплате счёта № %id%",
+  "receipt.preview": "Уведомление от Владимира Пичугина.",
 
-  "invoice.notify.mail.subject": "Напоминание об оплате счёта № %id%",
-  "invoice.notify.mail.preview": "Уведомление от сайта pichug.in.",
-  "invoice.notify.mail.text": "Письмо является напоминанием о том, что счёт",
+  "notify.subject": "Напоминание об оплате счёта № %id%",
+  "notify.preview": "Уведомление от Владимира Пичугина.",
 
-  "invoice.notify.mail.unpaid.subject": "Повтороное напоминание о неоплаченном счёте № %id%",
-  "invoice.notify.mail.unpaid.preview": "Уведомление от сайта pichug.in.",
-  "inovice.notify.mail.unpaid.text": "Письмо является повторным напоминанием о том, что счёт",
+  "notify_unpaid.subject": "Повторное напоминание о неоплаченном счёте № %id%",
+  "notify_unpaid.preview": "Уведомление от Владимира Пичугина.",
 
-  "invoice.notify.mail.unpaid.last.subject": "Третье и последнее уведомление о неоплаченном счёте № %id%",
-  "invoice.notify.mail.unpaid.last.preview": "Уведомление от сайта pichug.in.",
-  "invoice.notify.mail.unpaid.last.text": "Письмо является третьим и последним напоминанием о том, что счёт",
+  "notify_unpaid_final.subject": "Третье и последнее уведомление о неоплаченном счёте № %id%",
+  "notify_unpaid_final.preview": "Уведомление от Владимира Пичугина.",
 
-  "smtp.header.feedback_id": "{message_id}:{invoice_id}:{service}:Pichugin",
+  "notify_overdue.subject": "Уведомление о просроченном счёте № %id%",
+  "notify_overdue.preview": "Уведомление от Владимира Пичугина.",
+
+  "notify_refund.subject": "Уведомление о возмещении счёта № %id%",
+  "notify_refund.preview": "Уведомление от Владимира Пичугина.",
+
+  "notify_cancel.subject": "Уведомление об отмене счёта № %id%",
+  "notify_cancel.preview": "Уведомление от Владимира Пичугина.",
 
   "gateways.name.CASH": "Наличные деньги",
   "gateways.name.CREDIT": "Кредит",
@@ -42,14 +45,6 @@
 
   "gateways.name.PAYPAL": "PayPal",
 
-  "date_time": "%d %B %Y в %H:%M:%S",
-  "date": "%d %B %Y",
-  "time": "%H:%M:%S",
-
-  "currency.RUB": "{value} ₽",
-  "currency.EUR": "€ {value}",
-  "currency.USD": "$ {value}",
-
   "months.nom.January": "январь",
   "months.nom.February": "февраль",
   "months.nom.March": "март",
@@ -63,16 +58,26 @@
   "months.nom.November": "ноябрь",
   "months.nom.December": "декабрь",
 
-  "months.January": "января",
-  "months.February": "февраля",
-  "months.March": "марта",
-  "months.April": "апреля",
-  "months.May": "мая",
-  "months.June": "июня",
-  "months.July": "июля",
-  "months.August": "августа",
-  "months.September": "сентября",
-  "months.October": "октября",
-  "months.November": "ноября",
-  "months.December": "декабря"
+  "months.gen.January": "января",
+  "months.gen.February": "февраля",
+  "months.gen.March": "марта",
+  "months.gen.April": "апреля",
+  "months.gen.May": "мая",
+  "months.gen.June": "июня",
+  "months.gen.July": "июля",
+  "months.gen.August": "августа",
+  "months.gen.September": "сентября",
+  "months.gen.October": "октября",
+  "months.gen.November": "ноября",
+  "months.gen.December": "декабря",
+
+  "date_time": "%d %B %Y в %H:%M:%S",
+  "date": "%d %B %Y",
+  "time": "%H:%M:%S",
+
+  "currency.RUB": "{value} ₽",
+  "currency.EUR": "€ {value}",
+  "currency.USD": "$ {value}",
+
+  "smtp.header.feedback_id": "{message_id}:{invoice_id}:{service}:Pichugin"
 }

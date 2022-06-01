@@ -10,24 +10,24 @@ from settings import Settings
 
 class InvoiceMail:
     @staticmethod
-    def make(message_key, message_id, invoice, payee, payer):
-        plain = load_assets_file('invoice_{}_ru.txt'.format(message_key))
-        html = load_assets_file('invoice_{}_ru.html'.format(message_key))
-        subject = L10n.get('invoice.{}.mail.subject'.format(message_key))
-        preview = L10n.get('invoice.{}.mail.preview'.format(message_key))
-        text = L10n.get('invoice.{}.mail.text'.format(message_key))
+    def make(message, message_id, invoice, payee, payer):
+        message = message.lower()
+        message_key = message.split('_')[0]
+
+        plain = load_assets_file('invoice_{}_ru.txt'.format(message))
+        html = load_assets_file('invoice_{}_ru.html'.format(message))
+        subject = L10n.get('{}.subject'.format(message))
+        preview = L10n.get('{}.preview'.format(message))
         placeholders = dict(zip_longest(Settings.PLACEHOLDERS.get(message_key.upper()), []))
 
         invoice_id = invoice.get('id')
         invoice_name = invoice.get('name', invoice_id)
 
-        invoice_currency = invoice.get('currency', 'RUB')
-        if invoice_currency not in ['RUB', 'EUR', 'USD']:
-            invoice_currency = 'RUB'
+        invoice_currency = invoice.get('currency') if invoice.get('currency') in Settings.CURRENCY else Settings.DEFAULT_CURRENCY
 
         to_addr = payer.getraw('email')
         to_name = payer_name = parse_name(payer)
-        first_name = payer.getraw('first_name', to_name)
+        first_name = payer.getraw('first_name') or to_name
         payee_name = parse_name(payee)
 
         transactions = invoice.get('transactions') if type(invoice.get('transactions')) == list else []
@@ -43,7 +43,6 @@ class InvoiceMail:
         placeholders['first_name'] = first_name
         placeholders['payee'] = payee_name
         placeholders['preview'] = preview
-        placeholders['text'] = text
         placeholders['year'] = datetime.datetime.now().year
 
         for key, value in dict(invoice).items():
@@ -56,19 +55,21 @@ class InvoiceMail:
                     date = format_date(invoice[key])
                     placeholders[placeholder] = date
 
-        if len(invoice['gateways']) > 0:
-            placeholders['gateway'] = get_gateway(gateways[0])
-        else:
-            placeholders['gateway'] = '-'
+        placeholders['gateway'] = get_gateway(gateways[0]) if len(invoice['gateways']) > 0 else '-'
 
-        placeholders['total'] = 0
+        placeholders['price'] = 0
         placeholders['discount'] = 0
         for item in items:
             if type(item) != dict:
                 continue
 
-            placeholders['total'] += item.get('price', 0)
-            placeholders['discount'] += item.get('discount', 0)
+            for item_key in ['price', 'discount']:
+                item_value = item.get(item_key)
+
+                if not item_value or type(item_value) not in [int, float]:
+                    item_value = 0.0
+
+                placeholders[item_key] += float(item_value)
 
         placeholders['paid'] = 0
         for transaction in transactions:
@@ -81,7 +82,7 @@ class InvoiceMail:
             if gateway:
                 placeholders['gateway'] = get_gateway(gateway)
 
-        for key in ['total', 'discount', 'paid']:
+        for key in ['price', 'discount', 'paid']:
             try:
                 if placeholders[key]:
                     placeholders[key] = f'{float(placeholders[key]):,.2f}'

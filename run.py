@@ -13,8 +13,10 @@ if __name__ == "__main__":
     console_thread.daemon = True
     console_thread.start()
 
-    schedule.every(8).hours.do(main.run_threaded, name='AutoInvoice', func=main.auto_invoice).run()
-    schedule.every(10).minutes.do(main.run_threaded, name='Notify', func=main.invoice_notify).run()
+    schedule.every(5).minutes.do(main.run_threaded, name='AutoInvoice', func=main.auto_invoice).run()
+    schedule.every(5).minutes.do(main.run_threaded, name='NotifyPaid', func=main.invoice_notify).run()
+    schedule.every(5).minutes.do(main.run_threaded, name='NotifyCancelled', func=main.invoice_notify_cancelled).run()
+    schedule.every(5).minutes.do(main.run_threaded, name='NotifyRefunded', func=main.invoice_notify_refunded).run()
     schedule.every(5).minutes.do(main.run_threaded, name='Receipt', func=main.invoice_receipt).run()
 
     # Поддерживать работу основного потока, пока поток демона жив.

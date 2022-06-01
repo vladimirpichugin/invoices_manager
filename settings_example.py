@@ -29,21 +29,21 @@ class Settings:
 
     PLACEHOLDERS = {
         'INVOICE_OBJECT': [
-            'id', '_id', 'name', 'commission'
+            'id', '_id', 'name'
         ],
         'RECEIPT': [
-            'id', '_id', 'name', 'total', 'discount', 'commission', 'paid',
+            'id', '_id', 'name', 'price', 'discount', 'paid',
             'payee', 'payer', 'date_created', 'date_due', 'date_paid', 'gateway', 'first_name', 'email',
             'preview', 'message_id', 'year'
         ],
         'NOTIFY': [
-            'id', '_id', 'name', 'total',
+            'id', '_id', 'name', 'price',
             'date_created', 'date_due', 'date_paid', 'first_name', 'email',
             'preview', 'message_id', 'year'
         ]
     }
 
-    INVOICE_VERSION = 2
+    INVOICE_VERSION = 3
 
     INVOICE_TEMPLATE = {
         'currency': 'RUB',
@@ -56,8 +56,10 @@ class Settings:
         'items': [],
         'transactions': [],
         '_hidden': False,
-        '_version': 2,
+        '_version': 3,
         'name': None,
         'paid_timestamp': None
     }
 
+    DEFAULT_CURRENCY = 'RUB'
+    CURRENCY = ['RUB', 'EUR', 'USD']
